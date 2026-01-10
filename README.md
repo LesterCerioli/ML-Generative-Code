@@ -377,4 +377,4 @@ This project serves as an excellent learning resource for:
 
 ---
 
-*"Data-driven decisions lead to better architectures"* - Lester Cerioli
+
