@@ -338,7 +338,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Contact
 
-**Lester Cerioli** - [GitHub](https://github.com/lestercerioli) - lester.cerioli@example.com
+**Lester Cerioli** - [GitHub](https://github.com/lestercerioli) - cerioli728@gmail.com
 
 Project Link: [https://github.com/lestercerioli/ml-microservice-generator](https://github.com/lestercerioli/ml-microservice-generator)
 
