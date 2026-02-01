@@ -1,31 +1,25 @@
 from typing import Optional, Dict, Any
 from app.database import db
-from app.services.user_service import UserService  # Importa a classe, não a instância
+from app.services.user_service import UserService
 
 class UserCRUD:
     def __init__(self):
-        self.user_service = UserService()  # Instância local
+        self.user_service = UserService()
     
     def create_user(self, name: str, email: str, password: str, 
                    organization_name: str) -> Optional[Dict[str, Any]]:
-        
         try:
-            
             result = self.user_service.create_user(name, email, password, organization_name)
             if result:
-                # Remove sensitive data before returning
                 result.pop('password', None)
                 result.pop('organization_id', None)
             return result
-            
         except Exception as e:
             print(f"Error creating user: {e}")
             return None
     
     def authenticate_user(self, email: str, password: str, organization_name: str) -> Optional[Dict[str, Any]]:
-        
         try:
-            # Usa authenticate_user em vez de authenticate_user_by_role
             auth_result = self.user_service.authenticate_user(email, password, organization_name)
             return auth_result
         except Exception as e:
@@ -34,18 +28,14 @@ class UserCRUD:
     
     def change_user_password(self, user_id: str, current_password: str, 
                            new_password: str, organization_name: str) -> bool:
-        
         try:
-            
             org_id = self.user_service.get_organization_id_by_name(organization_name)
             if not org_id:
                 return False
                 
-            
             user = self.get_user_by_id(user_id, organization_name)
             if not user:
                 return False
-            
             
             try:
                 with db.get_connection() as conn:
@@ -59,10 +49,8 @@ class UserCRUD:
                         if not user_data:
                             return False
                             
-                        
                         if not self.user_service.verify_password(current_password, user_data['password']):
                             return False
-                        
                         
                         new_hashed_password = self.user_service.hash_password(new_password)
                                                 
@@ -84,7 +72,6 @@ class UserCRUD:
             return False
     
     def get_user_by_id(self, user_id: str, organization_name: str) -> Optional[Dict[str, Any]]:
-        
         try:
             org_id = self.user_service.get_organization_id_by_name(organization_name)
             if not org_id:
@@ -115,7 +102,6 @@ class UserCRUD:
             return None
     
     def get_user_by_email(self, email: str, organization_name: str) -> Optional[Dict[str, Any]]:
-        
         try:
             org_id = self.user_service.get_organization_id_by_name(organization_name)
             if not org_id:
@@ -146,7 +132,6 @@ class UserCRUD:
             return None
     
     def get_organization_users(self, organization_name: str) -> Optional[Dict[str, Any]]:
-        
         try:
             org_id = self.user_service.get_organization_id_by_name(organization_name)
             if not org_id:
@@ -164,7 +149,6 @@ class UserCRUD:
                         
                         users = cursor.fetchall()
                         if users:
-                            # Converter para lista de dicionários
                             return [dict(user) for user in users]
                         return []
                         
@@ -177,20 +161,21 @@ class UserCRUD:
             return None
     
     def update_user(self, user_id: str, update_data: Dict[str, Any], organization_name: str) -> Optional[Dict[str, Any]]:
-        
         try:
             org_id = self.user_service.get_organization_id_by_name(organization_name)
             if not org_id:
                 return None
             
-            
             allowed_fields = ['name', 'email']
-                        
+            
             set_clauses = []
+            placeholders = []
             values = []
+            
             for field, value in update_data.items():
                 if field in allowed_fields:
-                    set_clauses.append(f"{field} = %s")
+                    set_clauses.append(field)
+                    placeholders.append("%s")
                     values.append(value)
             
             if not set_clauses:
@@ -200,12 +185,19 @@ class UserCRUD:
             
             with db.get_connection() as conn:
                 with conn.cursor() as cursor:
-                    cursor.execute(f'''
+                    
+                    set_parts = []
+                    for field in set_clauses:
+                        set_parts.append(f"{field} = %s")
+                    
+                    query = f'''
                         UPDATE public.users 
-                        SET {', '.join(set_clauses)}, updated_at = CURRENT_TIMESTAMP
+                        SET {', '.join(set_parts)}, updated_at = CURRENT_TIMESTAMP
                         WHERE id = %s AND organization_id = %s AND deleted_at IS NULL
                         RETURNING id, name, email, created_at, updated_at
-                    ''', values)
+                    '''
+                    
+                    cursor.execute(query, values)
                     
                     result = cursor.fetchone()
                     conn.commit()
@@ -216,7 +208,6 @@ class UserCRUD:
             return None
     
     def delete_user(self, user_id: str, organization_name: str) -> bool:
-        
         try:
             org_id = self.user_service.get_organization_id_by_name(organization_name)
             if not org_id:
@@ -238,7 +229,6 @@ class UserCRUD:
             return False
     
     def reset_password(self, email: str, new_password: str, organization_name: str) -> bool:
-        
         try:
             org_id = self.user_service.get_organization_id_by_name(organization_name)
             if not org_id:
